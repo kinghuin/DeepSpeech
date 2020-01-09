@@ -22,7 +22,6 @@ class DataGenerator(object):
     """
     DataGenerator provides basic audio data preprocessing pipeline, and offers
     data reader interfaces of PaddlePaddle requirements.
-
     :param vocab_filepath: Vocabulary filepath for indexing tokenized
                            transcripts.
     :type vocab_filepath: basestring
@@ -58,9 +57,9 @@ class DataGenerator(object):
     :type keep_transcription_text: bool
     :param place: The place to run the program.
     :type place: CPUPlace or CUDAPlace
-    :param is_training: If set to True, generate text data for training, 
+    :param is_training: If set to True, generate text data for training,
                         otherwise,  generate text data for infer.
-    :type is_training: bool 
+    :type is_training: bool
     """
 
     def __init__(self,
@@ -102,7 +101,6 @@ class DataGenerator(object):
 
     def process_utterance(self, audio_file, transcript):
         """Load, augment, featurize and normalize for speech data.
-
         :param audio_file: Filepath or file object of audio file.
         :type audio_file: basestring | file
         :param transcript: Transcription text.
@@ -132,10 +130,8 @@ class DataGenerator(object):
         """
         Batch data reader creator for audio data. Return a callable generator
         function to produce batches of data.
-
         Audio features within one batch will be padded with zeros to have the
         same shape, or a user-defined shape.
-
         :param manifest_path: Filepath of manifest for audio files.
         :type manifest_path: basestring
         :param batch_size: Number of instances in a batch.
@@ -211,7 +207,6 @@ class DataGenerator(object):
     @property
     def feeding(self):
         """Returns data reader's feeding dict.
-
         :return: Data feeding dict.
         :rtype: dict
         """
@@ -221,7 +216,6 @@ class DataGenerator(object):
     @property
     def vocab_size(self):
         """Return the vocabulary size.
-
         :return: Vocabulary size.
         :rtype: int
         """
@@ -230,7 +224,6 @@ class DataGenerator(object):
     @property
     def vocab_list(self):
         """Return the vocabulary in list.
-
         :return: Vocabulary in list.
         :rtype: list
         """
@@ -248,7 +241,6 @@ class DataGenerator(object):
 
     def _subfile_from_tar(self, file):
         """Get subfile object from tar.
-
         It will return a subfile object from tar file
         and cached tar file info for next reading request.
         """
@@ -268,7 +260,6 @@ class DataGenerator(object):
         """
         Instance reader creator. Create a callable function to produce
         instances of data.
-
         Instance: a tuple of ndarray of audio spectrogram and a list of
         token indices for transcript.
         """
@@ -285,11 +276,9 @@ class DataGenerator(object):
         """
         Padding audio features with zeros to make them have the same shape (or
         a user-defined shape) within one bach.
-
         If ``padding_to`` is -1, the maximun shape in the batch will be used
         as the target shape for padding. Otherwise, `padding_to` will be the
         target shape (only refers to the second axis).
-
         If `flatten` is True, features will be flatten to 1darray.
         """
         new_batch = []
@@ -330,10 +319,11 @@ class DataGenerator(object):
                 axis=0)
             masks.append(mask)
         padded_audios = np.array(padded_audios).astype('float32')
-        texts = np.expand_dims(np.array(texts).astype('int32'), axis=-1)
         if self._is_training:
             texts = fluid.create_lod_tensor(
-                texts, recursive_seq_lens=[text_lens], place=self._place)
+                np.array(texts).astype('int32'),
+                recursive_seq_lens=[text_lens],
+                place=self._place)
         audio_lens = np.array(audio_lens).astype('int64').reshape([-1, 1])
         masks = np.array(masks).astype('float32')
         return padded_audios, texts, audio_lens, masks
@@ -341,13 +331,11 @@ class DataGenerator(object):
     def _batch_shuffle(self, manifest, batch_size, clipped=False):
         """Put similarly-sized instances into minibatches for better efficiency
         and make a batch-wise shuffle.
-
         1. Sort the audio clips by duration.
         2. Generate a random number `k`, k in [0, batch_size).
         3. Randomly shift `k` instances in order to create different batches
            for different epochs. Create minibatches.
         4. Shuffle the minibatches.
-
         :param manifest: Manifest contents. List of dict.
         :type manifest: list
         :param batch_size: Batch size. This size is also used for generate
